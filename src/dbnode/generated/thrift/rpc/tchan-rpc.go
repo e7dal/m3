@@ -1876,7 +1876,7 @@ func (s *tchanNodeServer) handleWriteBatchRaw(ctx thrift.Context, protocol athri
 	var req NodeWriteBatchRawArgs
 	var res NodeWriteBatchRawResult
 
-	if err := req.Read(protocol); err != nil {
+	if err := req.Read(ctx, protocol); err != nil {
 		return false, nil, err
 	}
 

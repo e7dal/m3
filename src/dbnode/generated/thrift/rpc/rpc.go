@@ -28,13 +28,33 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+
 	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/m3db/m3/src/x/pool"
 )
 
 // (needed to ensure safety because of naive import list construction.)
 var _ = thrift.ZERO
 var _ = fmt.Printf
 var _ = bytes.Equal
+
+// NB(bodu): Just create a global bucketized bytes pool for all thrift pooling here.
+var (
+	buckets = []pool.Bucket{
+		pool.Bucket{Count: 65536, Capacity: 32},
+		pool.Bucket{Count: 65536, Capacity: 64},
+		pool.Bucket{Count: 65536, Capacity: 128},
+		pool.Bucket{Count: 65536, Capacity: 256},
+		pool.Bucket{Count: 32768, Capacity: 512},
+		pool.Bucket{Count: 16384, Capacity: 1024},
+		pool.Bucket{Count: 8192, Capacity: 2048},
+		pool.Bucket{Count: 4096, Capacity: 4096},
+	}
+	bytesPool = pool.NewCheckedBytesPool(buckets, nil,
+		func(s []pool.Bucket) pool.BytesPool {
+			return pool.NewBytesPool(s, nil)
+		})
+)
 
 type TimeType int64
 
@@ -1039,7 +1059,7 @@ func (p *Datapoint) ReadField2(iprot thrift.TProtocol) error {
 }
 
 func (p *Datapoint) ReadField3(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 3: ", err)
 	} else {
 		p.Annotation = v
@@ -1718,7 +1738,7 @@ func (p *FetchBatchRawRequest) ReadField2(iprot thrift.TProtocol) error {
 }
 
 func (p *FetchBatchRawRequest) ReadField3(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 3: ", err)
 	} else {
 		p.NameSpace = v
@@ -1735,7 +1755,7 @@ func (p *FetchBatchRawRequest) ReadField4(iprot thrift.TProtocol) error {
 	p.Ids = tSlice
 	for i := 0; i < size; i++ {
 		var _elem3 []byte
-		if v, err := iprot.ReadBinary(); err != nil {
+		if v, err := iprot.ReadBinary(nil); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
 			_elem3 = v
@@ -1946,7 +1966,7 @@ func (p *FetchBatchRawV2Request) ReadField1(iprot thrift.TProtocol) error {
 	p.NameSpaces = tSlice
 	for i := 0; i < size; i++ {
 		var _elem4 []byte
-		if v, err := iprot.ReadBinary(); err != nil {
+		if v, err := iprot.ReadBinary(nil); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
 			_elem4 = v
@@ -2194,7 +2214,7 @@ func (p *FetchBatchRawV2RequestElement) ReadField3(iprot thrift.TProtocol) error
 }
 
 func (p *FetchBatchRawV2RequestElement) ReadField4(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 4: ", err)
 	} else {
 		p.ID = v
@@ -2889,7 +2909,7 @@ func (p *Segment) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *Segment) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.Head = v
@@ -2898,7 +2918,7 @@ func (p *Segment) ReadField1(iprot thrift.TProtocol) error {
 }
 
 func (p *Segment) ReadField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 2: ", err)
 	} else {
 		p.Tail = v
@@ -3226,7 +3246,7 @@ func (p *FetchTaggedRequest) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *FetchTaggedRequest) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.NameSpace = v
@@ -3235,7 +3255,7 @@ func (p *FetchTaggedRequest) ReadField1(iprot thrift.TProtocol) error {
 }
 
 func (p *FetchTaggedRequest) ReadField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 2: ", err)
 	} else {
 		p.Query = v
@@ -3757,7 +3777,7 @@ func (p *FetchTaggedIDResult_) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *FetchTaggedIDResult_) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.ID = v
@@ -3766,7 +3786,7 @@ func (p *FetchTaggedIDResult_) ReadField1(iprot thrift.TProtocol) error {
 }
 
 func (p *FetchTaggedIDResult_) ReadField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 2: ", err)
 	} else {
 		p.NameSpace = v
@@ -3775,7 +3795,7 @@ func (p *FetchTaggedIDResult_) ReadField2(iprot thrift.TProtocol) error {
 }
 
 func (p *FetchTaggedIDResult_) ReadField3(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 3: ", err)
 	} else {
 		p.EncodedTags = v
@@ -4010,7 +4030,7 @@ func (p *FetchBlocksRawRequest) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *FetchBlocksRawRequest) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.NameSpace = v
@@ -4193,7 +4213,7 @@ func (p *FetchBlocksRawRequestElement) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *FetchBlocksRawRequestElement) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.ID = v
@@ -4471,7 +4491,7 @@ func (p *Blocks) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *Blocks) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.ID = v
@@ -5123,7 +5143,7 @@ func (p *FetchBlocksMetadataRawV2Request) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *FetchBlocksMetadataRawV2Request) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.NameSpace = v
@@ -5168,7 +5188,7 @@ func (p *FetchBlocksMetadataRawV2Request) ReadField5(iprot thrift.TProtocol) err
 }
 
 func (p *FetchBlocksMetadataRawV2Request) ReadField6(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 6: ", err)
 	} else {
 		p.PageToken = v
@@ -5468,7 +5488,7 @@ func (p *FetchBlocksMetadataRawV2Result_) ReadField1(iprot thrift.TProtocol) err
 }
 
 func (p *FetchBlocksMetadataRawV2Result_) ReadField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 2: ", err)
 	} else {
 		p.NextPageToken = v
@@ -5718,7 +5738,7 @@ func (p *BlockMetadataV2) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *BlockMetadataV2) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.ID = v
@@ -5783,7 +5803,7 @@ func (p *BlockMetadataV2) ReadField7(iprot thrift.TProtocol) error {
 }
 
 func (p *BlockMetadataV2) ReadField8(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 8: ", err)
 	} else {
 		p.EncodedTags = v
@@ -6021,7 +6041,7 @@ func (p *WriteBatchRawRequest) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *WriteBatchRawRequest) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.NameSpace = v
@@ -6187,7 +6207,7 @@ func (p *WriteBatchRawV2Request) ReadField1(iprot thrift.TProtocol) error {
 	p.NameSpaces = tSlice
 	for i := 0; i < size; i++ {
 		var _elem17 []byte
-		if v, err := iprot.ReadBinary(); err != nil {
+		if v, err := iprot.ReadBinary(nil); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
 			_elem17 = v
@@ -6367,7 +6387,7 @@ func (p *WriteBatchRawRequestElement) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *WriteBatchRawRequestElement) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.ID = v
@@ -6531,7 +6551,7 @@ func (p *WriteBatchRawV2RequestElement) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *WriteBatchRawV2RequestElement) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.ID = v
@@ -6696,7 +6716,7 @@ func (p *WriteTaggedBatchRawRequest) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *WriteTaggedBatchRawRequest) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.NameSpace = v
@@ -6862,7 +6882,7 @@ func (p *WriteTaggedBatchRawV2Request) ReadField1(iprot thrift.TProtocol) error 
 	p.NameSpaces = tSlice
 	for i := 0; i < size; i++ {
 		var _elem20 []byte
-		if v, err := iprot.ReadBinary(); err != nil {
+		if v, err := iprot.ReadBinary(nil); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
 			_elem20 = v
@@ -7057,7 +7077,7 @@ func (p *WriteTaggedBatchRawRequestElement) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *WriteTaggedBatchRawRequestElement) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.ID = v
@@ -7066,7 +7086,7 @@ func (p *WriteTaggedBatchRawRequestElement) ReadField1(iprot thrift.TProtocol) e
 }
 
 func (p *WriteTaggedBatchRawRequestElement) ReadField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 2: ", err)
 	} else {
 		p.EncodedTags = v
@@ -7261,7 +7281,7 @@ func (p *WriteTaggedBatchRawV2RequestElement) Read(iprot thrift.TProtocol) error
 }
 
 func (p *WriteTaggedBatchRawV2RequestElement) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.ID = v
@@ -7270,7 +7290,7 @@ func (p *WriteTaggedBatchRawV2RequestElement) ReadField1(iprot thrift.TProtocol)
 }
 
 func (p *WriteTaggedBatchRawV2RequestElement) ReadField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 2: ", err)
 	} else {
 		p.EncodedTags = v
@@ -7585,7 +7605,7 @@ func (p *TruncateRequest) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *TruncateRequest) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.NameSpace = v
@@ -9456,7 +9476,7 @@ func (p *AggregateQueryRawRequest) Read(iprot thrift.TProtocol) error {
 }
 
 func (p *AggregateQueryRawRequest) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.Query = v
@@ -9483,7 +9503,7 @@ func (p *AggregateQueryRawRequest) ReadField3(iprot thrift.TProtocol) error {
 }
 
 func (p *AggregateQueryRawRequest) ReadField4(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 4: ", err)
 	} else {
 		p.NameSpace = v
@@ -9509,7 +9529,7 @@ func (p *AggregateQueryRawRequest) ReadField6(iprot thrift.TProtocol) error {
 	p.TagNameFilter = tSlice
 	for i := 0; i < size; i++ {
 		var _elem24 []byte
-		if v, err := iprot.ReadBinary(); err != nil {
+		if v, err := iprot.ReadBinary(nil); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
 			_elem24 = v
@@ -9935,7 +9955,7 @@ func (p *AggregateQueryRawResultTagNameElement) Read(iprot thrift.TProtocol) err
 }
 
 func (p *AggregateQueryRawResultTagNameElement) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.TagName = v
@@ -10080,7 +10100,7 @@ func (p *AggregateQueryRawResultTagValueElement) Read(iprot thrift.TProtocol) er
 }
 
 func (p *AggregateQueryRawResultTagValueElement) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadBinary(); err != nil {
+	if v, err := iprot.ReadBinary(nil); err != nil {
 		return thrift.PrependError("error reading field 1: ", err)
 	} else {
 		p.TagValue = v
@@ -20673,7 +20693,10 @@ func (p *NodeWriteBatchRawArgs) IsSetReq() bool {
 	return p.Req != nil
 }
 
-func (p *NodeWriteBatchRawArgs) Read(iprot thrift.TProtocol) error {
+func (p *NodeWriteBatchRawArgs) Read(
+	ctx thrift.Context,
+	iprot thrift.TProtocol,
+) error {
 	if _, err := iprot.ReadStructBegin(); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
 	}
