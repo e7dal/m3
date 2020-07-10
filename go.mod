@@ -134,7 +134,7 @@ require (
 )
 
 // branch 0.9.3-pool-read-binary-3
-replace github.com/apache/thrift => github.com/notbdu/thrift v0.0.0-20200708194451-759efb14f548
+replace github.com/apache/thrift => github.com/notbdu/thrift v0.0.0-20200709001028-4a91d0c15343
 
 replace gopkg.in/vmihailenco/msgpack.v2 => github.com/vmihailenco/msgpack v2.8.3+incompatible
 

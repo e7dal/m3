@@ -27,7 +27,7 @@ import (
 	"fmt"
 
 	athrift "github.com/apache/thrift/lib/go/thrift"
-	"github.com/uber/tchannel-go/thrift"
+	"github.com/uber/tchannel-go/thrift
 )
 
 // Interfaces for the service and client for the services defined in the IDL.
@@ -1953,7 +1953,7 @@ func (s *tchanNodeServer) handleWriteTagged(ctx thrift.Context, protocol athrift
 	return err == nil, &res, nil
 }
 
-func (s *tchanNodeServer) handleWriteTaggedBatchRaw(ctx thrift.Context, protocol athrift.TProtocol) (bool, athrift.TStruct, error) {
+func (s *tchanNodeServer) handleWriteTaggedBatchRaw(tctx thrift.Context, protocol athrift.TProtocol) (bool, athrift.TStruct, error) {
 	var req NodeWriteTaggedBatchRawArgs
 	var res NodeWriteTaggedBatchRawResult
 
@@ -1961,8 +1961,8 @@ func (s *tchanNodeServer) handleWriteTaggedBatchRaw(ctx thrift.Context, protocol
 		return false, nil, err
 	}
 
-	err :=
-		s.handler.WriteTaggedBatchRaw(ctx, req.Req)
+        ctx := tchannelthrift.Context(tctx)
+	err := s.handler.WriteTaggedBatchRaw(ctx, req.Req)
 
 	if err != nil {
 		switch v := err.(type) {
