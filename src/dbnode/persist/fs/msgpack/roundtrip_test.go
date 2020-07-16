@@ -378,7 +378,7 @@ func TestIndexEntryRoundtrip(t *testing.T) {
 	)
 	require.NoError(t, enc.EncodeIndexEntry(testIndexEntry))
 	dec.Reset(NewByteDecoderStream(enc.Bytes()))
-	res, err := dec.DecodeIndexEntry(nil)
+	res, err := dec.DecodeIndexEntry(nil, true)
 	require.NoError(t, err)
 	require.Equal(t, testIndexEntry, res)
 }
@@ -393,7 +393,7 @@ func TestIndexEntryRoundtripWithBytesPool(t *testing.T) {
 
 	require.NoError(t, enc.EncodeIndexEntry(testIndexEntry))
 	dec.Reset(NewByteDecoderStream(enc.Bytes()))
-	res, err := dec.DecodeIndexEntry(pool)
+	res, err := dec.DecodeIndexEntry(pool, true)
 	require.NoError(t, err)
 	require.Equal(t, testIndexEntry, res)
 }
@@ -420,7 +420,7 @@ func TestIndexEntryRoundTripBackwardsCompatibilityV1(t *testing.T) {
 
 	enc.EncodeIndexEntry(testIndexEntry)
 	dec.Reset(NewByteDecoderStream(enc.Bytes()))
-	res, err := dec.DecodeIndexEntry(nil)
+	res, err := dec.DecodeIndexEntry(nil, true)
 	require.NoError(t, err)
 	require.Equal(t, testIndexEntry, res)
 }
@@ -448,7 +448,7 @@ func TestIndexEntryRoundTripForwardsCompatibilityV1(t *testing.T) {
 	}()
 
 	dec.Reset(NewByteDecoderStream(enc.Bytes()))
-	res, err := dec.DecodeIndexEntry(nil)
+	res, err := dec.DecodeIndexEntry(nil, true)
 	require.NoError(t, err)
 	require.Equal(t, testIndexEntry, res)
 }
@@ -467,7 +467,7 @@ func TestIndexEntryRoundTripBackwardsCompatibilityV2(t *testing.T) {
 
 	enc.EncodeIndexEntry(testIndexEntry)
 	dec.Reset(NewByteDecoderStream(enc.Bytes()))
-	res, err := dec.DecodeIndexEntry(nil)
+	res, err := dec.DecodeIndexEntry(nil, true)
 	require.NoError(t, err)
 	require.Equal(t, testIndexEntry, res)
 }
@@ -486,7 +486,7 @@ func TestIndexEntryRoundTripForwardsCompatibilityV2(t *testing.T) {
 
 	enc.EncodeIndexEntry(testIndexEntry)
 	dec.Reset(NewByteDecoderStream(enc.Bytes()))
-	res, err := dec.DecodeIndexEntry(nil)
+	res, err := dec.DecodeIndexEntry(nil, true)
 	require.NoError(t, err)
 	require.Equal(t, testIndexEntry, res)
 }
@@ -592,7 +592,7 @@ func TestMultiTypeRoundtripStress(t *testing.T) {
 		case 0:
 			res, err = dec.DecodeIndexInfo()
 		case 1:
-			res, err = dec.DecodeIndexEntry(nil)
+			res, err = dec.DecodeIndexEntry(nil, true)
 		case 2:
 			res, err = dec.DecodeLogInfo()
 		case 3:
